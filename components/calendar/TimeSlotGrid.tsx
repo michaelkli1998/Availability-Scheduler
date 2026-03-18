@@ -249,7 +249,7 @@ export default function TimeSlotGrid({
       <div className="min-w-max border border-gray-300">
         {/* Header with dates */}
         <div className="flex bg-gray-50 sticky top-0 z-10 border-b border-gray-300">
-          <div className="w-28 flex-shrink-0 p-2 border-r border-gray-300">
+          <div className="w-28 flex-shrink-0 p-2 border-r border-gray-300 sticky left-0 z-20 bg-gray-50 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.1)]">
             <span className="text-xs font-semibold text-gray-600">Time</span>
           </div>
           {dates.map((date) => {
@@ -281,7 +281,7 @@ export default function TimeSlotGrid({
         <div>
           {times.map((timeSlot, timeIndex) => (
             <div key={timeIndex} className="flex border-b border-gray-300 last:border-b-0">
-              <div className="w-28 h-8 flex-shrink-0 flex items-center px-2 border-r border-gray-300 bg-gray-50">
+              <div className="w-28 h-8 flex-shrink-0 flex items-center px-2 border-r border-gray-300 bg-gray-50 sticky left-0 z-10 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.1)]">
                 <span className="text-xs text-gray-600">
                   {formatTime12Hour(timeSlot.startTime)}
                 </span>
