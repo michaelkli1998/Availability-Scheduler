@@ -1,7 +1,9 @@
 'use client';
 
+import { useState } from 'react';
 import { TimeSlot } from '@/types/event';
 import Button from '@/components/ui/Button';
+import WeeklyScheduleModal from './WeeklyScheduleModal';
 
 interface QuickSelectButtonsProps {
   timeSlots: TimeSlot[];
@@ -14,6 +16,7 @@ export default function QuickSelectButtons({
   selectedSlots,
   onSelectionChange,
 }: QuickSelectButtonsProps) {
+  const [isWeeklyModalOpen, setIsWeeklyModalOpen] = useState(false);
   const selectAll = () => {
     onSelectionChange(timeSlots.map((slot) => slot.id));
   };
@@ -59,33 +62,45 @@ export default function QuickSelectButtons({
   };
 
   return (
-    <div className="mb-4">
-      <div className="flex items-center gap-2 mb-2">
-        <span className="text-sm font-medium text-gray-700">Quick select:</span>
-        <span className="text-xs text-gray-500">
-          ({selectedSlots.length} slot{selectedSlots.length !== 1 ? 's' : ''} selected)
-        </span>
+    <>
+      <div className="mb-4">
+        <div className="flex items-center gap-2 mb-2">
+          <span className="text-sm font-medium text-gray-700">Quick select:</span>
+          <span className="text-xs text-gray-500">
+            ({selectedSlots.length} slot{selectedSlots.length !== 1 ? 's' : ''} selected)
+          </span>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="secondary" size="sm" onClick={() => setIsWeeklyModalOpen(true)}>
+            Weekly Schedule
+          </Button>
+          <Button variant="secondary" size="sm" onClick={selectAll}>
+            Select All
+          </Button>
+          <Button variant="secondary" size="sm" onClick={clearAll}>
+            Clear All
+          </Button>
+          <Button variant="secondary" size="sm" onClick={selectWorkingHours}>
+            Working Hours (9-5)
+          </Button>
+          <Button variant="secondary" size="sm" onClick={selectMornings}>
+            Mornings
+          </Button>
+          <Button variant="secondary" size="sm" onClick={selectAfternoons}>
+            Afternoons
+          </Button>
+          <Button variant="secondary" size="sm" onClick={selectEvenings}>
+            Evenings
+          </Button>
+        </div>
       </div>
-      <div className="flex flex-wrap gap-2">
-        <Button variant="secondary" size="sm" onClick={selectAll}>
-          Select All
-        </Button>
-        <Button variant="secondary" size="sm" onClick={clearAll}>
-          Clear All
-        </Button>
-        <Button variant="secondary" size="sm" onClick={selectWorkingHours}>
-          Working Hours (9-5)
-        </Button>
-        <Button variant="secondary" size="sm" onClick={selectMornings}>
-          Mornings
-        </Button>
-        <Button variant="secondary" size="sm" onClick={selectAfternoons}>
-          Afternoons
-        </Button>
-        <Button variant="secondary" size="sm" onClick={selectEvenings}>
-          Evenings
-        </Button>
-      </div>
-    </div>
+
+      <WeeklyScheduleModal
+        isOpen={isWeeklyModalOpen}
+        onClose={() => setIsWeeklyModalOpen(false)}
+        timeSlots={timeSlots}
+        onApply={onSelectionChange}
+      />
+    </>
   );
 }
