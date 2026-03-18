@@ -49,6 +49,12 @@ export default function CreateEventPage() {
               <Calendar className="h-6 w-6 text-indigo-600" />
               <span className="text-xl font-bold text-gray-900">meet2when</span>
             </Link>
+            <Link
+              href="/events"
+              className="text-sm text-indigo-600 hover:text-indigo-700 font-medium"
+            >
+              View Events
+            </Link>
           </div>
         </div>
       </header>

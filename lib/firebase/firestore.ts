@@ -8,6 +8,8 @@ import {
   query,
   where,
   onSnapshot,
+  orderBy,
+  limit,
   Timestamp,
   Unsubscribe,
 } from 'firebase/firestore';
@@ -199,4 +201,27 @@ export function subscribeToAvailabilities(
       callback([]);
     }
   );
+}
+
+// Get All Events
+export async function getAllEvents(limitCount: number = 50): Promise<Event[]> {
+  try {
+    const q = query(
+      collection(db, EVENTS_COLLECTION),
+      orderBy('createdAt', 'desc'),
+      limit(limitCount)
+    );
+
+    const querySnapshot = await getDocs(q);
+    const events: Event[] = [];
+
+    querySnapshot.forEach((doc) => {
+      events.push({ id: doc.id, ...doc.data() } as Event);
+    });
+
+    return events;
+  } catch (error) {
+    console.error('Error getting events:', error);
+    throw new Error('Failed to get events');
+  }
 }
