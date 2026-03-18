@@ -23,6 +23,8 @@ export default function TimeSlotGrid({
   const [isTouchDevice, setIsTouchDevice] = useState(false);
   const gridRef = useRef<HTMLDivElement>(null);
   const scrollIntervalRef = useRef<number | null>(null);
+  const touchStartPos = useRef<{ x: number; y: number } | null>(null);
+  const touchedSlotId = useRef<string | null>(null);
 
   console.log('TimeSlotGrid received slots:', timeSlots.length);
 
@@ -148,14 +150,14 @@ export default function TimeSlotGrid({
   };
 
   // Touch event handlers for mobile
-  const handleTouchStart = (slotId: string) => {
+  const handleTouchStart = (e: React.TouchEvent, slotId: string) => {
     if (readOnly) return;
 
-    // On touch devices, only toggle the cell (no drag selection)
-    // This allows natural scrolling behavior
-    if (isTouchDevice) {
-      toggleSlot(slotId);
-    } else {
+    const touch = e.touches[0];
+    touchStartPos.current = { x: touch.clientX, y: touch.clientY };
+    touchedSlotId.current = slotId;
+
+    if (!isTouchDevice) {
       // On non-touch devices (e.g., stylus), enable drag selection
       setIsSelecting(true);
       const isSelected = selectedSlots.includes(slotId);
@@ -183,10 +185,24 @@ export default function TimeSlotGrid({
     }
   };
 
-  const handleTouchEnd = () => {
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (isTouchDevice && touchStartPos.current && touchedSlotId.current) {
+      const touch = e.changedTouches[0];
+      const deltaX = Math.abs(touch.clientX - touchStartPos.current.x);
+      const deltaY = Math.abs(touch.clientY - touchStartPos.current.y);
+
+      // If touch didn't move much (less than 10px), treat it as a tap
+      if (deltaX < 10 && deltaY < 10) {
+        toggleSlot(touchedSlotId.current);
+      }
+    }
+
     if (!isTouchDevice) {
       setIsSelecting(false);
     }
+
+    touchStartPos.current = null;
+    touchedSlotId.current = null;
   };
 
   const handleDateHeaderClick = (date: string) => {
@@ -288,7 +304,8 @@ export default function TimeSlotGrid({
                     style={{ touchAction: readOnly || isTouchDevice ? 'auto' : 'none' }}
                     onMouseDown={() => handleMouseDown(slot.id)}
                     onMouseEnter={() => handleMouseEnter(slot.id)}
-                    onTouchStart={() => handleTouchStart(slot.id)}
+                    onTouchStart={(e) => handleTouchStart(e, slot.id)}
+                    onTouchEnd={handleTouchEnd}
                     whileHover={readOnly ? {} : { scale: 1.02 }}
                     whileTap={readOnly ? {} : { scale: 0.98 }}
                   />
