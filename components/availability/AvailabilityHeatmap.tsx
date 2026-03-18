@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { TimeSlot, HeatmapData } from '@/types/event';
 import { formatDate, formatTime12Hour } from '@/lib/utils/date';
-import { getColorIntensity, findBestSlots } from '@/lib/utils/heatmap';
+import { getColorIntensity } from '@/lib/utils/heatmap';
 
 interface AvailabilityHeatmapProps {
   timeSlots: TimeSlot[];
@@ -29,9 +29,6 @@ export default function AvailabilityHeatmap({
 
   const dates = Object.keys(slotsByDate).sort();
   const times = slotsByDate[dates[0]] || [];
-
-  // Find best time slots
-  const bestSlots = findBestSlots(heatmapData, 3);
 
   const getSlotData = (slotId: string): HeatmapData | undefined => {
     return heatmapData.find((data) => data.slotId === slotId);
@@ -83,7 +80,6 @@ export default function AvailabilityHeatmap({
                 {dates.map((date) => {
                   const slot = slotsByDate[date][timeIndex];
                   const slotData = getSlotData(slot.id);
-                  const isBestSlot = bestSlots.includes(slot.id);
 
                   return (
                     <div
@@ -95,7 +91,6 @@ export default function AvailabilityHeatmap({
                         transition-all cursor-pointer relative
                         border-r border-gray-300 last:border-r-0
                         ${getColorIntensity(slotData?.percentage || 0)}
-                        ${isBestSlot ? 'ring-2 ring-yellow-400 ring-inset' : ''}
                       `}
                       onMouseEnter={(e) => handleMouseEnter(slot.id, e)}
                       onMouseLeave={handleMouseLeave}
@@ -103,11 +98,6 @@ export default function AvailabilityHeatmap({
                       <span className="text-xs font-semibold">
                         {slotData?.count || 0}
                       </span>
-                      {isBestSlot && (
-                        <span className="absolute top-0 right-0 text-yellow-500 text-xs">
-                          ⭐
-                        </span>
-                      )}
                     </div>
                   );
                 })}
@@ -160,10 +150,6 @@ export default function AvailabilityHeatmap({
         <div className="flex items-center gap-2">
           <div className="w-6 h-6 bg-indigo-700 border border-gray-300 rounded"></div>
           <span className="text-sm text-gray-600">100%</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="text-yellow-500">⭐</span>
-          <span className="text-sm text-gray-600">Top 3 times</span>
         </div>
       </div>
     </div>

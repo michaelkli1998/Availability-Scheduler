@@ -7,11 +7,12 @@ import { Calendar, ArrowLeft, Users } from 'lucide-react';
 import { useEvent } from '@/lib/hooks/useEvent';
 import { useAvailabilities } from '@/lib/hooks/useAvailability';
 import { generateTimeSlots } from '@/lib/utils/date';
-import { calculateHeatmap } from '@/lib/utils/heatmap';
+import { calculateHeatmap, findBestMeetingTime, BestMeetingTime as BestMeetingTimeType } from '@/lib/utils/heatmap';
 import { getEventUrl } from '@/lib/utils/url';
 import { TimeSlot, HeatmapData } from '@/types/event';
 import EventHeader from '@/components/event/EventHeader';
 import AvailabilityHeatmap from '@/components/availability/AvailabilityHeatmap';
+import BestMeetingTime from '@/components/availability/BestMeetingTime';
 import ParticipantList from '@/components/availability/ParticipantList';
 import ShareableLink from '@/components/event/ShareableLink';
 import Button from '@/components/ui/Button';
@@ -27,6 +28,7 @@ export default function ResultsPage() {
 
   const [timeSlots, setTimeSlots] = useState<TimeSlot[]>([]);
   const [heatmapData, setHeatmapData] = useState<HeatmapData[]>([]);
+  const [bestMeetingTimes, setBestMeetingTimes] = useState<BestMeetingTimeType[]>([]);
   const [eventUrl, setEventUrl] = useState('');
 
   useEffect(() => {
@@ -48,6 +50,14 @@ export default function ResultsPage() {
       const slotIds = timeSlots.map((slot) => slot.id);
       const heatmap = calculateHeatmap(availabilities, slotIds);
       setHeatmapData(heatmap);
+
+      // Calculate best meeting times with improved criteria
+      const bestTimes = findBestMeetingTime(heatmap, timeSlots, {
+        minThresholdPercent: 50, // At least 50% of people
+        minDurationSlots: 1, // At least 30 minutes (1 slot)
+        maxSuggestions: 3, // Show top 3 alternatives
+      });
+      setBestMeetingTimes(bestTimes);
     }
   }, [availabilities, timeSlots]);
 
@@ -131,10 +141,15 @@ export default function ResultsPage() {
 
               {availabilities.length > 0 ? (
                 <>
+                  {bestMeetingTimes.length > 0 && (
+                    <div className="mb-6">
+                      <BestMeetingTime bestTimes={bestMeetingTimes} />
+                    </div>
+                  )}
                   <AvailabilityHeatmap timeSlots={timeSlots} heatmapData={heatmapData} />
                   <div className="mt-6 p-4 bg-indigo-50 border border-indigo-200 rounded-lg">
                     <p className="text-sm text-indigo-900">
-                      <strong>Tip:</strong> Hover over any time slot to see who is available. Times marked with ⭐ are the top 3 most popular slots.
+                      <strong>Tip:</strong> Hover over any time slot to see who is available and the percentage of participants free at that time.
                     </p>
                   </div>
                 </>
