@@ -20,10 +20,16 @@ export default function TimeSlotGrid({
 }: TimeSlotGridProps) {
   const [isSelecting, setIsSelecting] = useState(false);
   const [selectionMode, setSelectionMode] = useState<'add' | 'remove'>('add');
+  const [isTouchDevice, setIsTouchDevice] = useState(false);
   const gridRef = useRef<HTMLDivElement>(null);
   const scrollIntervalRef = useRef<number | null>(null);
 
   console.log('TimeSlotGrid received slots:', timeSlots.length);
+
+  // Detect if device supports touch
+  useEffect(() => {
+    setIsTouchDevice('ontouchstart' in window || navigator.maxTouchPoints > 0);
+  }, []);
 
   // Group slots by date
   const slotsByDate = timeSlots.reduce((acc, slot) => {
@@ -144,14 +150,22 @@ export default function TimeSlotGrid({
   // Touch event handlers for mobile
   const handleTouchStart = (slotId: string) => {
     if (readOnly) return;
-    setIsSelecting(true);
-    const isSelected = selectedSlots.includes(slotId);
-    setSelectionMode(isSelected ? 'remove' : 'add');
-    toggleSlot(slotId);
+
+    // On touch devices, only toggle the cell (no drag selection)
+    // This allows natural scrolling behavior
+    if (isTouchDevice) {
+      toggleSlot(slotId);
+    } else {
+      // On non-touch devices (e.g., stylus), enable drag selection
+      setIsSelecting(true);
+      const isSelected = selectedSlots.includes(slotId);
+      setSelectionMode(isSelected ? 'remove' : 'add');
+      toggleSlot(slotId);
+    }
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
-    if (!isSelecting || readOnly) return;
+    if (!isSelecting || readOnly || isTouchDevice) return;
 
     const touch = e.touches[0];
     const element = document.elementFromPoint(touch.clientX, touch.clientY);
@@ -170,7 +184,9 @@ export default function TimeSlotGrid({
   };
 
   const handleTouchEnd = () => {
-    setIsSelecting(false);
+    if (!isTouchDevice) {
+      setIsSelecting(false);
+    }
   };
 
   const handleDateHeaderClick = (date: string) => {
@@ -269,7 +285,7 @@ export default function TimeSlotGrid({
                       }
                       ${readOnly ? 'cursor-default' : ''}
                     `}
-                    style={{ touchAction: readOnly ? 'auto' : 'none' }}
+                    style={{ touchAction: readOnly || isTouchDevice ? 'auto' : 'none' }}
                     onMouseDown={() => handleMouseDown(slot.id)}
                     onMouseEnter={() => handleMouseEnter(slot.id)}
                     onTouchStart={() => handleTouchStart(slot.id)}
@@ -286,7 +302,9 @@ export default function TimeSlotGrid({
       {/* Instructions */}
       {!readOnly && (
         <div className="mt-4 text-sm text-gray-600 text-center">
-          Click or drag to select your available time slots
+          {isTouchDevice
+            ? 'Tap to select time slots, swipe to scroll'
+            : 'Click or drag to select your available time slots'}
         </div>
       )}
     </div>
