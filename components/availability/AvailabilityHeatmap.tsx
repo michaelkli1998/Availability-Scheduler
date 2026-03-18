@@ -50,32 +50,11 @@ export default function AvailabilityHeatmap({
     setHoveredSlot(null);
   };
 
-  const handleMouseMove = (event: React.MouseEvent) => {
-    // Get the element directly under the mouse
-    const element = document.elementFromPoint(event.clientX, event.clientY);
-
-    // Check if it's a heatmap cell with a data-slot-id
-    const slotId = element?.getAttribute('data-slot-id');
-
-    // Update hovered slot based on what's actually under the cursor
-    if (slotId && slotId !== hoveredSlot && element) {
-      const rect = element.getBoundingClientRect();
-      setTooltipPosition({
-        x: rect.left + rect.width / 2,
-        y: rect.top - 10,
-      });
-      setHoveredSlot(slotId);
-    } else if (!slotId && hoveredSlot) {
-      // Mouse is not over any slot, clear tooltip
-      setHoveredSlot(null);
-    }
-  };
-
   const hoveredSlotData = hoveredSlot ? getSlotData(hoveredSlot) : null;
 
   return (
-    <div className="relative">
-      <div className="overflow-x-auto" onMouseMove={handleMouseMove} onMouseLeave={handleMouseLeave}>
+    <div className="relative" onMouseLeave={handleMouseLeave}>
+      <div className="overflow-x-auto">
         <div className="min-w-max border border-gray-300">
           {/* Header with dates */}
           <div className="flex bg-gray-50 sticky top-0 z-10 border-b border-gray-300">
@@ -139,33 +118,26 @@ export default function AvailabilityHeatmap({
       </div>
 
       {/* Tooltip */}
-      <AnimatePresence mode="wait">
-        {hoveredSlotData && (
-          <motion.div
-            key={hoveredSlot}
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.95 }}
-            transition={{ duration: 0.1 }}
-            className="fixed z-50 bg-gray-900 text-white px-3 py-2 rounded-lg shadow-lg text-sm max-w-xs pointer-events-none"
-            style={{
-              left: tooltipPosition.x,
-              top: tooltipPosition.y,
-              transform: 'translate(-50%, -100%)',
-            }}
-          >
-            <div className="font-semibold mb-1">
-              {hoveredSlotData.count} {hoveredSlotData.count === 1 ? 'person' : 'people'}{' '}
-              available ({Math.round(hoveredSlotData.percentage)}%)
+      {hoveredSlotData && (
+        <div
+          className="fixed z-50 bg-gray-900 text-white px-3 py-2 rounded-lg shadow-lg text-sm max-w-xs pointer-events-none transition-opacity duration-100"
+          style={{
+            left: tooltipPosition.x,
+            top: tooltipPosition.y,
+            transform: 'translate(-50%, -100%)',
+          }}
+        >
+          <div className="font-semibold mb-1">
+            {hoveredSlotData.count} {hoveredSlotData.count === 1 ? 'person' : 'people'}{' '}
+            available ({Math.round(hoveredSlotData.percentage)}%)
+          </div>
+          {hoveredSlotData.participants.length > 0 && (
+            <div className="text-xs text-gray-300">
+              {hoveredSlotData.participants.join(', ')}
             </div>
-            {hoveredSlotData.participants.length > 0 && (
-              <div className="text-xs text-gray-300">
-                {hoveredSlotData.participants.join(', ')}
-              </div>
-            )}
-          </motion.div>
-        )}
-      </AnimatePresence>
+          )}
+        </div>
+      )}
 
       {/* Legend */}
       <div className="mt-6 flex items-center justify-center gap-6 flex-wrap">
