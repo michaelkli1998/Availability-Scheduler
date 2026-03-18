@@ -155,7 +155,7 @@ export default function ResultsPage() {
 
           <FadeIn delay={0.3}>
             <div className="bg-white rounded-lg shadow-md p-6">
-              <ParticipantList availabilities={availabilities} />
+              <ParticipantList availabilities={availabilities} eventId={eventId} />
             </div>
           </FadeIn>
         </div>

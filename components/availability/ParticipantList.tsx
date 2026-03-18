@@ -2,13 +2,16 @@
 
 import { Availability } from '@/types/event';
 import { formatDistanceToNow } from 'date-fns';
-import { User } from 'lucide-react';
+import { User, Edit2 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 interface ParticipantListProps {
   availabilities: Availability[];
+  eventId?: string;
 }
 
-export default function ParticipantList({ availabilities }: ParticipantListProps) {
+export default function ParticipantList({ availabilities, eventId }: ParticipantListProps) {
+  const router = useRouter();
   if (availabilities.length === 0) {
     return (
       <div className="text-center py-8 text-gray-500">
@@ -22,6 +25,13 @@ export default function ParticipantList({ availabilities }: ParticipantListProps
   const sortedAvailabilities = [...availabilities].sort(
     (a, b) => b.submittedAt.toMillis() - a.submittedAt.toMillis()
   );
+
+  const handleEditClick = (participantName: string) => {
+    if (eventId) {
+      // Navigate to event page with name as query param
+      router.push(`/event/${eventId}?name=${encodeURIComponent(participantName)}`);
+    }
+  };
 
   return (
     <div>
@@ -48,10 +58,22 @@ export default function ParticipantList({ availabilities }: ParticipantListProps
                 </p>
               </div>
             </div>
-            <div className="text-xs text-gray-500">
-              {formatDistanceToNow(availability.submittedAt.toDate(), {
-                addSuffix: true,
-              })}
+            <div className="flex items-center gap-3">
+              <div className="text-xs text-gray-500">
+                {formatDistanceToNow(availability.submittedAt.toDate(), {
+                  addSuffix: true,
+                })}
+              </div>
+              {eventId && (
+                <button
+                  onClick={() => handleEditClick(availability.participantName)}
+                  className="flex items-center gap-1 px-3 py-1.5 text-sm text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 rounded transition-colors"
+                  title="Edit schedule"
+                >
+                  <Edit2 className="h-3.5 w-3.5" />
+                  <span className="font-medium">Edit</span>
+                </button>
+              )}
             </div>
           </div>
         ))}

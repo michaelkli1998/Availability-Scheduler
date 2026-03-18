@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Calendar, ArrowRight } from 'lucide-react';
 import { useEvent } from '@/lib/hooks/useEvent';
@@ -10,6 +10,7 @@ import { submitAvailability, updateAvailability, findAvailabilityByName } from '
 import { generateTimeSlots } from '@/lib/utils/date';
 import { TimeSlot } from '@/types/event';
 import EventHeader from '@/components/event/EventHeader';
+import ParticipantsList from '@/components/event/ParticipantsList';
 import TimeSlotGrid from '@/components/calendar/TimeSlotGrid';
 import QuickSelectButtons from '@/components/calendar/QuickSelectButtons';
 import SelectionSummary from '@/components/calendar/SelectionSummary';
@@ -22,6 +23,7 @@ import toast from 'react-hot-toast';
 export default function EventPage() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const eventId = params.eventId as string;
 
   const { event, loading: eventLoading, error: eventError } = useEvent(eventId);
@@ -33,6 +35,14 @@ export default function EventPage() {
   const [timeSlots, setTimeSlots] = useState<TimeSlot[]>([]);
   const [existingSubmissionId, setExistingSubmissionId] = useState<string | null>(null);
   const [isCheckingName, setIsCheckingName] = useState(false);
+
+  // Auto-fill name from query parameter
+  useEffect(() => {
+    const nameParam = searchParams.get('name');
+    if (nameParam) {
+      setParticipantName(nameParam);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     if (event) {
@@ -115,6 +125,20 @@ export default function EventPage() {
     const timeoutId = setTimeout(checkExisting, 500);
     return () => clearTimeout(timeoutId);
   }, [participantName, eventId]);
+
+  const handleEditParticipant = async (name: string) => {
+    setParticipantName(name);
+    // Scroll to the name input
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    toast.success(`Loading ${name}'s availability...`);
+  };
+
+  const handleClearForm = () => {
+    setParticipantName('');
+    setSelectedSlots([]);
+    setExistingSubmissionId(null);
+    toast.success('Form cleared - ready for new submission');
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -211,6 +235,17 @@ export default function EventPage() {
             </div>
           </FadeIn>
 
+          {!availabilitiesLoading && availabilities.length > 0 && (
+            <FadeIn delay={0.05}>
+              <div className="mb-6">
+                <ParticipantsList
+                  availabilities={availabilities}
+                  onEditClick={handleEditParticipant}
+                />
+              </div>
+            </FadeIn>
+          )}
+
           <FadeIn delay={0.1}>
             <div className="bg-white rounded-lg shadow-md p-6">
               <h2 className="text-xl font-semibold text-gray-900 mb-4">
@@ -269,9 +304,18 @@ export default function EventPage() {
                     <p className="mt-1 text-xs text-gray-500">Checking for existing submission...</p>
                   )}
                   {existingSubmissionId && (
-                    <p className="mt-1 text-xs text-indigo-600">
-                      ✓ Editing your previous submission
-                    </p>
+                    <div className="mt-2 flex items-center justify-between">
+                      <p className="text-xs text-indigo-600">
+                        ✓ Editing your previous submission
+                      </p>
+                      <button
+                        type="button"
+                        onClick={handleClearForm}
+                        className="text-xs text-gray-600 hover:text-gray-800 underline"
+                      >
+                        New Submission
+                      </button>
+                    </div>
                   )}
                 </div>
 
