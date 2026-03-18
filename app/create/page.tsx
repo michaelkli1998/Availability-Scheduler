@@ -47,7 +47,7 @@ export default function CreateEventPage() {
           <div className="flex items-center justify-between">
             <Link href="/" className="flex items-center gap-2">
               <Calendar className="h-6 w-6 text-indigo-600" />
-              <span className="text-xl font-bold text-gray-900">Scheduler</span>
+              <span className="text-xl font-bold text-gray-900">meet2when</span>
             </Link>
           </div>
         </div>

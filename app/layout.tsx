@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Availability Scheduler - Coordinate meetings easily",
+  title: "meet2when - Coordinate meetings easily",
   description: "Modern scheduling coordination tool to find the best time for group meetings",
 };
 

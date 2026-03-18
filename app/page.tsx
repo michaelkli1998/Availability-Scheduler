@@ -14,7 +14,7 @@ export default function Home() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Calendar className="h-6 w-6 text-indigo-600" />
-              <span className="text-xl font-bold text-gray-900">Scheduler</span>
+              <span className="text-xl font-bold text-gray-900">meet2when</span>
             </div>
           </div>
         </div>
@@ -151,13 +151,6 @@ export default function Home() {
           </div>
         </FadeIn>
       </section>
-
-      {/* Footer */}
-      <footer className="border-t border-gray-200 bg-white py-8">
-        <div className="container mx-auto px-4 text-center text-gray-600 text-sm">
-          <p>Built with Next.js and Firebase</p>
-        </div>
-      </footer>
     </div>
   );
 }
