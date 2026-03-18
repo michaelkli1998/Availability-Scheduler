@@ -53,28 +53,22 @@ export default function ParticipantList({ availabilities, eventId }: Participant
                   {availability.participantName}
                 </p>
                 <p className="text-sm text-gray-500">
-                  {availability.selectedSlots.length}{' '}
-                  {availability.selectedSlots.length === 1 ? 'slot' : 'slots'} selected
+                  {formatDistanceToNow(availability.submittedAt.toDate(), {
+                    addSuffix: true,
+                  })}
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-3">
-              <div className="text-xs text-gray-500">
-                {formatDistanceToNow(availability.submittedAt.toDate(), {
-                  addSuffix: true,
-                })}
-              </div>
-              {eventId && (
-                <button
-                  onClick={() => handleEditClick(availability.participantName)}
-                  className="flex items-center gap-1 px-3 py-1.5 text-sm text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 rounded transition-colors"
-                  title="Edit schedule"
-                >
-                  <Edit2 className="h-3.5 w-3.5" />
-                  <span className="font-medium">Edit</span>
-                </button>
-              )}
-            </div>
+            {eventId && (
+              <button
+                onClick={() => handleEditClick(availability.participantName)}
+                className="flex items-center gap-1 px-3 py-1.5 text-sm text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 rounded transition-colors"
+                title="Edit schedule"
+              >
+                <Edit2 className="h-3.5 w-3.5" />
+                <span className="font-medium">Edit</span>
+              </button>
+            )}
           </div>
         ))}
       </div>
