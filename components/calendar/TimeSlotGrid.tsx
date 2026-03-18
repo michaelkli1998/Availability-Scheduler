@@ -141,6 +141,39 @@ export default function TimeSlotGrid({
     }
   };
 
+  // Touch event handlers for mobile
+  const handleTouchStart = (slotId: string) => {
+    if (readOnly) return;
+    setIsSelecting(true);
+    const isSelected = selectedSlots.includes(slotId);
+    setSelectionMode(isSelected ? 'remove' : 'add');
+    toggleSlot(slotId);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!isSelecting || readOnly) return;
+    e.preventDefault(); // Prevent scrolling while selecting
+
+    const touch = e.touches[0];
+    const element = document.elementFromPoint(touch.clientX, touch.clientY);
+
+    if (element && element.hasAttribute('data-slot-id')) {
+      const slotId = element.getAttribute('data-slot-id');
+      if (slotId) {
+        const isSelected = selectedSlots.includes(slotId);
+        if (selectionMode === 'add' && !isSelected) {
+          onSelectionChange([...selectedSlots, slotId]);
+        } else if (selectionMode === 'remove' && isSelected) {
+          onSelectionChange(selectedSlots.filter((id) => id !== slotId));
+        }
+      }
+    }
+  };
+
+  const handleTouchEnd = () => {
+    setIsSelecting(false);
+  };
+
   const handleDateHeaderClick = (date: string) => {
     if (readOnly) return;
 
@@ -175,6 +208,8 @@ export default function TimeSlotGrid({
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
       onMouseLeave={handleMouseUp}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
     >
       <div className="min-w-max border border-gray-300">
         {/* Header with dates */}
@@ -223,6 +258,7 @@ export default function TimeSlotGrid({
                 return (
                   <motion.div
                     key={slot.id}
+                    data-slot-id={slot.id}
                     className={`
                       w-16 h-8 flex-shrink-0 cursor-pointer
                       select-none transition-colors
@@ -236,6 +272,7 @@ export default function TimeSlotGrid({
                     `}
                     onMouseDown={() => handleMouseDown(slot.id)}
                     onMouseEnter={() => handleMouseEnter(slot.id)}
+                    onTouchStart={() => handleTouchStart(slot.id)}
                     whileHover={readOnly ? {} : { scale: 1.02 }}
                     whileTap={readOnly ? {} : { scale: 0.98 }}
                   />
