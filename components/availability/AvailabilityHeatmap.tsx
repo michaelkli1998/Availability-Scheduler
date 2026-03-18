@@ -58,7 +58,7 @@ export default function AvailabilityHeatmap({
     const slotId = element?.getAttribute('data-slot-id');
 
     // Update hovered slot based on what's actually under the cursor
-    if (slotId && slotId !== hoveredSlot) {
+    if (slotId && slotId !== hoveredSlot && element) {
       const rect = element.getBoundingClientRect();
       setTooltipPosition({
         x: rect.left + rect.width / 2,
