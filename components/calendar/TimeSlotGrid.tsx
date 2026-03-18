@@ -152,7 +152,6 @@ export default function TimeSlotGrid({
 
   const handleTouchMove = (e: React.TouchEvent) => {
     if (!isSelecting || readOnly) return;
-    e.preventDefault(); // Prevent scrolling while selecting
 
     const touch = e.touches[0];
     const element = document.elementFromPoint(touch.clientX, touch.clientY);
@@ -270,6 +269,7 @@ export default function TimeSlotGrid({
                       }
                       ${readOnly ? 'cursor-default' : ''}
                     `}
+                    style={{ touchAction: readOnly ? 'auto' : 'none' }}
                     onMouseDown={() => handleMouseDown(slot.id)}
                     onMouseEnter={() => handleMouseEnter(slot.id)}
                     onTouchStart={() => handleTouchStart(slot.id)}
