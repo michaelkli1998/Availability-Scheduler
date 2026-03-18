@@ -157,7 +157,10 @@ export default function TimeSlotGrid({
     touchStartPos.current = { x: touch.clientX, y: touch.clientY };
     touchedSlotId.current = slotId;
 
-    if (!isTouchDevice) {
+    if (isTouchDevice) {
+      // Prevent mouse events from firing after touch events
+      e.preventDefault();
+    } else {
       // On non-touch devices (e.g., stylus), enable drag selection
       setIsSelecting(true);
       const isSelected = selectedSlots.includes(slotId);
@@ -193,6 +196,7 @@ export default function TimeSlotGrid({
 
       // If touch didn't move much (less than 10px), treat it as a tap
       if (deltaX < 10 && deltaY < 10) {
+        e.preventDefault(); // Prevent mouse events from firing
         toggleSlot(touchedSlotId.current);
       }
     }
