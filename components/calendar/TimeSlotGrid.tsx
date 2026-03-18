@@ -25,6 +25,8 @@ export default function TimeSlotGrid({
   const scrollIntervalRef = useRef<number | null>(null);
   const touchStartPos = useRef<{ x: number; y: number } | null>(null);
   const touchedSlotId = useRef<string | null>(null);
+  const dragStartCell = useRef<{ dateIndex: number; timeIndex: number } | null>(null);
+  const initialSelectedSlots = useRef<string[]>([]);
 
   console.log('TimeSlotGrid received slots:', timeSlots.length);
 
@@ -71,23 +73,60 @@ export default function TimeSlotGrid({
     [selectedSlots, onSelectionChange, readOnly]
   );
 
-  const handleMouseDown = (slotId: string) => {
+  const handleMouseDown = (slotId: string, dateIndex: number, timeIndex: number) => {
     if (readOnly) return;
 
     setIsSelecting(true);
+    dragStartCell.current = { dateIndex, timeIndex };
+    initialSelectedSlots.current = [...selectedSlots];
     const isSelected = selectedSlots.includes(slotId);
     setSelectionMode(isSelected ? 'remove' : 'add');
     toggleSlot(slotId);
   };
 
-  const handleMouseEnter = (slotId: string) => {
-    if (!isSelecting || readOnly) return;
+  const handleMouseEnter = (slotId: string, dateIndex: number, timeIndex: number) => {
+    if (!isSelecting || readOnly || !dragStartCell.current) return;
 
-    const isSelected = selectedSlots.includes(slotId);
-    if (selectionMode === 'add' && !isSelected) {
-      onSelectionChange([...selectedSlots, slotId]);
-    } else if (selectionMode === 'remove' && isSelected) {
-      onSelectionChange(selectedSlots.filter((id) => id !== slotId));
+    // Calculate rectangular selection
+    const startDateIdx = dragStartCell.current.dateIndex;
+    const startTimeIdx = dragStartCell.current.timeIndex;
+    const endDateIdx = dateIndex;
+    const endTimeIdx = timeIndex;
+
+    // Get min/max to support dragging in any direction
+    const minDateIdx = Math.min(startDateIdx, endDateIdx);
+    const maxDateIdx = Math.max(startDateIdx, endDateIdx);
+    const minTimeIdx = Math.min(startTimeIdx, endTimeIdx);
+    const maxTimeIdx = Math.max(startTimeIdx, endTimeIdx);
+
+    // Collect all slot IDs in the rectangle
+    const rectangleSlotIds: string[] = [];
+    for (let tIdx = minTimeIdx; tIdx <= maxTimeIdx; tIdx++) {
+      for (let dIdx = minDateIdx; dIdx <= maxDateIdx; dIdx++) {
+        const date = dates[dIdx];
+        const slot = slotsByDate[date][tIdx];
+        if (slot) {
+          rectangleSlotIds.push(slot.id);
+        }
+      }
+    }
+
+    // Apply selection mode to the rectangle
+    if (selectionMode === 'add') {
+      // Add all slots in rectangle that aren't already in initial selection
+      const newSelection = [...initialSelectedSlots.current];
+      rectangleSlotIds.forEach(id => {
+        if (!newSelection.includes(id)) {
+          newSelection.push(id);
+        }
+      });
+      onSelectionChange(newSelection);
+    } else {
+      // Remove all slots in rectangle from initial selection
+      const newSelection = initialSelectedSlots.current.filter(
+        id => !rectangleSlotIds.includes(id)
+      );
+      onSelectionChange(newSelection);
     }
   };
 
@@ -143,6 +182,8 @@ export default function TimeSlotGrid({
 
   const handleMouseUp = () => {
     setIsSelecting(false);
+    dragStartCell.current = null;
+    initialSelectedSlots.current = [];
     if (scrollIntervalRef.current) {
       window.clearInterval(scrollIntervalRef.current);
       scrollIntervalRef.current = null;
@@ -252,7 +293,7 @@ export default function TimeSlotGrid({
           <div className="w-28 flex-shrink-0 p-2 border-r border-gray-300 sticky left-0 z-20 bg-gray-50 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.1)]">
             <span className="text-xs font-semibold text-gray-600">Time</span>
           </div>
-          {dates.map((date) => {
+          {dates.map((date, dateIndex) => {
             const slotsForDate = slotsByDate[date] || [];
             const slotIdsForDate = slotsForDate.map((slot) => slot.id);
             const hasSelectedSlots = slotIdsForDate.some((id) => selectedSlots.includes(id));
@@ -286,7 +327,7 @@ export default function TimeSlotGrid({
                   {formatTime12Hour(timeSlot.startTime)}
                 </span>
               </div>
-              {dates.map((date) => {
+              {dates.map((date, dateIndex) => {
                 const slot = slotsByDate[date][timeIndex];
                 const isSelected = selectedSlots.includes(slot.id);
 
@@ -306,8 +347,8 @@ export default function TimeSlotGrid({
                       ${readOnly ? 'cursor-default' : ''}
                     `}
                     style={{ touchAction: readOnly || isTouchDevice ? 'auto' : 'none' }}
-                    onMouseDown={() => handleMouseDown(slot.id)}
-                    onMouseEnter={() => handleMouseEnter(slot.id)}
+                    onMouseDown={() => handleMouseDown(slot.id, dateIndex, timeIndex)}
+                    onMouseEnter={() => handleMouseEnter(slot.id, dateIndex, timeIndex)}
                     onTouchStart={(e) => handleTouchStart(e, slot.id)}
                     onTouchEnd={handleTouchEnd}
                     whileHover={readOnly ? {} : { scale: 1.02 }}

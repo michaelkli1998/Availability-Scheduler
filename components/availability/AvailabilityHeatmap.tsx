@@ -50,11 +50,32 @@ export default function AvailabilityHeatmap({
     setHoveredSlot(null);
   };
 
+  const handleMouseMove = (event: React.MouseEvent) => {
+    // Get the element directly under the mouse
+    const element = document.elementFromPoint(event.clientX, event.clientY);
+
+    // Check if it's a heatmap cell with a data-slot-id
+    const slotId = element?.getAttribute('data-slot-id');
+
+    // Update hovered slot based on what's actually under the cursor
+    if (slotId && slotId !== hoveredSlot) {
+      const rect = element.getBoundingClientRect();
+      setTooltipPosition({
+        x: rect.left + rect.width / 2,
+        y: rect.top - 10,
+      });
+      setHoveredSlot(slotId);
+    } else if (!slotId && hoveredSlot) {
+      // Mouse is not over any slot, clear tooltip
+      setHoveredSlot(null);
+    }
+  };
+
   const hoveredSlotData = hoveredSlot ? getSlotData(hoveredSlot) : null;
 
   return (
     <div className="relative">
-      <div className="overflow-x-auto" onMouseLeave={handleMouseLeave}>
+      <div className="overflow-x-auto" onMouseMove={handleMouseMove} onMouseLeave={handleMouseLeave}>
         <div className="min-w-max border border-gray-300">
           {/* Header with dates */}
           <div className="flex bg-gray-50 sticky top-0 z-10 border-b border-gray-300">
@@ -86,8 +107,9 @@ export default function AvailabilityHeatmap({
                   const isBestSlot = bestSlots.includes(slot.id);
 
                   return (
-                    <motion.div
+                    <div
                       key={slot.id}
+                      data-slot-id={slot.id}
                       className={`
                         w-16 h-8 flex-shrink-0
                         flex items-center justify-center
@@ -98,7 +120,6 @@ export default function AvailabilityHeatmap({
                       `}
                       onMouseEnter={(e) => handleMouseEnter(slot.id, e)}
                       onMouseLeave={handleMouseLeave}
-                      whileHover={{ scale: 1.05, zIndex: 20 }}
                     >
                       <span className="text-xs font-semibold">
                         {slotData?.count || 0}
@@ -108,7 +129,7 @@ export default function AvailabilityHeatmap({
                           ⭐
                         </span>
                       )}
-                    </motion.div>
+                    </div>
                   );
                 })}
               </div>
