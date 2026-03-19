@@ -394,10 +394,10 @@ export default function TimeSlotGrid({
         </div>
       )}
 
-      {/* Selection mode indicator */}
+      {/* Selection mode indicator - fixed overlay */}
       {isLongPressMode && (
-        <div className="mb-2 p-2 bg-green-100 border-2 border-green-500 rounded-lg text-center animate-pulse">
-          <p className="text-sm font-semibold text-green-900">
+        <div className="fixed top-20 left-1/2 transform -translate-x-1/2 z-40 p-3 bg-green-500 border-2 border-green-600 rounded-lg text-center animate-pulse shadow-lg">
+          <p className="text-sm font-bold text-white">
             ✓ Selection Mode Active - Drag to select
           </p>
         </div>
