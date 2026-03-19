@@ -71,8 +71,7 @@ export default function TimeSlotGrid({
 
     const handleTouchMoveNonPassive = (e: TouchEvent) => {
       if (isLongPressMode) {
-        e.preventDefault();
-        e.stopPropagation();
+        e.preventDefault(); // Prevent scrolling but allow event to bubble
       }
     };
 
