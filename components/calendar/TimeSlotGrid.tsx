@@ -244,6 +244,11 @@ export default function TimeSlotGrid({
       return;
     }
 
+    // Prevent scrolling when in long press mode
+    if (isLongPressMode) {
+      e.preventDefault();
+    }
+
     const touch = e.touches[0];
     const element = document.elementFromPoint(touch.clientX, touch.clientY);
 
@@ -378,6 +383,7 @@ export default function TimeSlotGrid({
       <div
         ref={gridRef}
         className="overflow-x-auto"
+        style={{ touchAction: isLongPressMode ? 'none' : 'auto' }}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
