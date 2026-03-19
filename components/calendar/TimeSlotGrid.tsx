@@ -21,12 +21,14 @@ export default function TimeSlotGrid({
   const [isSelecting, setIsSelecting] = useState(false);
   const [selectionMode, setSelectionMode] = useState<'add' | 'remove'>('add');
   const [isTouchDevice, setIsTouchDevice] = useState(false);
+  const [isLongPressMode, setIsLongPressMode] = useState(false);
   const gridRef = useRef<HTMLDivElement>(null);
   const scrollIntervalRef = useRef<number | null>(null);
   const touchStartPos = useRef<{ x: number; y: number } | null>(null);
   const touchedSlotId = useRef<string | null>(null);
   const dragStartCell = useRef<{ dateIndex: number; timeIndex: number } | null>(null);
   const initialSelectedSlots = useRef<string[]>([]);
+  const longPressTimer = useRef<NodeJS.Timeout | null>(null);
 
   console.log('TimeSlotGrid received slots:', timeSlots.length);
 
@@ -50,11 +52,14 @@ export default function TimeSlotGrid({
   console.log('TimeSlotGrid dates:', dates);
   console.log('TimeSlotGrid times per day:', times.length);
 
-  // Cleanup scroll interval on unmount
+  // Cleanup scroll interval and long press timer on unmount
   useEffect(() => {
     return () => {
       if (scrollIntervalRef.current) {
         window.clearInterval(scrollIntervalRef.current);
+      }
+      if (longPressTimer.current) {
+        clearTimeout(longPressTimer.current);
       }
     };
   }, []);
@@ -191,7 +196,7 @@ export default function TimeSlotGrid({
   };
 
   // Touch event handlers for mobile
-  const handleTouchStart = (e: React.TouchEvent, slotId: string) => {
+  const handleTouchStart = (e: React.TouchEvent, slotId: string, dateIndex: number, timeIndex: number) => {
     if (readOnly) return;
 
     const touch = e.touches[0];
@@ -201,6 +206,22 @@ export default function TimeSlotGrid({
     if (isTouchDevice) {
       // Prevent mouse events from firing after touch events
       e.preventDefault();
+
+      // Start long press timer (500ms)
+      longPressTimer.current = setTimeout(() => {
+        setIsLongPressMode(true);
+        setIsSelecting(true);
+        dragStartCell.current = { dateIndex, timeIndex };
+        initialSelectedSlots.current = [...selectedSlots];
+        const isSelected = selectedSlots.includes(slotId);
+        setSelectionMode(isSelected ? 'remove' : 'add');
+        toggleSlot(slotId);
+
+        // Haptic feedback if available
+        if (navigator.vibrate) {
+          navigator.vibrate(50);
+        }
+      }, 500);
     } else {
       // On non-touch devices (e.g., stylus), enable drag selection
       setIsSelecting(true);
@@ -211,32 +232,84 @@ export default function TimeSlotGrid({
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
-    if (!isSelecting || readOnly || isTouchDevice) return;
+    if (!isSelecting || readOnly) return;
+
+    // Allow touch move only in long press mode
+    if (isTouchDevice && !isLongPressMode) {
+      // Clear long press timer if user moves finger (not a long press, just scrolling)
+      if (longPressTimer.current) {
+        clearTimeout(longPressTimer.current);
+        longPressTimer.current = null;
+      }
+      return;
+    }
 
     const touch = e.touches[0];
     const element = document.elementFromPoint(touch.clientX, touch.clientY);
 
     if (element && element.hasAttribute('data-slot-id')) {
       const slotId = element.getAttribute('data-slot-id');
-      if (slotId) {
-        const isSelected = selectedSlots.includes(slotId);
-        if (selectionMode === 'add' && !isSelected) {
-          onSelectionChange([...selectedSlots, slotId]);
-        } else if (selectionMode === 'remove' && isSelected) {
-          onSelectionChange(selectedSlots.filter((id) => id !== slotId));
+      const dateIndexStr = element.getAttribute('data-date-index');
+      const timeIndexStr = element.getAttribute('data-time-index');
+
+      if (slotId && dateIndexStr && timeIndexStr) {
+        const dateIndex = parseInt(dateIndexStr);
+        const timeIndex = parseInt(timeIndexStr);
+
+        // Use rectangular selection logic like mouse drag
+        if (dragStartCell.current) {
+          const startDateIdx = dragStartCell.current.dateIndex;
+          const startTimeIdx = dragStartCell.current.timeIndex;
+
+          const minDateIdx = Math.min(startDateIdx, dateIndex);
+          const maxDateIdx = Math.max(startDateIdx, dateIndex);
+          const minTimeIdx = Math.min(startTimeIdx, timeIndex);
+          const maxTimeIdx = Math.max(startTimeIdx, timeIndex);
+
+          const rectangleSlotIds: string[] = [];
+          for (let tIdx = minTimeIdx; tIdx <= maxTimeIdx; tIdx++) {
+            for (let dIdx = minDateIdx; dIdx <= maxDateIdx; dIdx++) {
+              const date = dates[dIdx];
+              const slot = slotsByDate[date][tIdx];
+              if (slot) {
+                rectangleSlotIds.push(slot.id);
+              }
+            }
+          }
+
+          if (selectionMode === 'add') {
+            const newSelection = [...initialSelectedSlots.current];
+            rectangleSlotIds.forEach(id => {
+              if (!newSelection.includes(id)) {
+                newSelection.push(id);
+              }
+            });
+            onSelectionChange(newSelection);
+          } else {
+            const newSelection = initialSelectedSlots.current.filter(
+              id => !rectangleSlotIds.includes(id)
+            );
+            onSelectionChange(newSelection);
+          }
         }
       }
     }
   };
 
   const handleTouchEnd = (e: React.TouchEvent) => {
+    // Clear long press timer
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+
     if (isTouchDevice && touchStartPos.current && touchedSlotId.current) {
       const touch = e.changedTouches[0];
       const deltaX = Math.abs(touch.clientX - touchStartPos.current.x);
       const deltaY = Math.abs(touch.clientY - touchStartPos.current.y);
 
-      // If touch didn't move much (less than 10px), treat it as a tap
-      if (deltaX < 10 && deltaY < 10) {
+      // If touch didn't move much (less than 10px) and not in long press mode, treat it as a tap
+      if (deltaX < 10 && deltaY < 10 && !isLongPressMode) {
         e.preventDefault(); // Prevent mouse events from firing
         toggleSlot(touchedSlotId.current);
       }
@@ -246,6 +319,11 @@ export default function TimeSlotGrid({
       setIsSelecting(false);
     }
 
+    // Reset long press mode and drag state
+    setIsLongPressMode(false);
+    setIsSelecting(false);
+    dragStartCell.current = null;
+    initialSelectedSlots.current = [];
     touchStartPos.current = null;
     touchedSlotId.current = null;
   };
@@ -278,15 +356,34 @@ export default function TimeSlotGrid({
   }
 
   return (
-    <div
-      ref={gridRef}
-      className="overflow-x-auto"
-      onMouseMove={handleMouseMove}
-      onMouseUp={handleMouseUp}
-      onMouseLeave={handleMouseUp}
-      onTouchMove={handleTouchMove}
-      onTouchEnd={handleTouchEnd}
-    >
+    <div>
+      {/* Mobile-only instructions */}
+      {!readOnly && isTouchDevice && (
+        <div className="mb-4 p-3 bg-indigo-50 border border-indigo-200 rounded-lg">
+          <p className="text-sm text-indigo-900">
+            <strong>Tip:</strong> Tap to select individual slots, or <strong>long press and drag</strong> to select multiple slots at once
+          </p>
+        </div>
+      )}
+
+      {/* Selection mode indicator */}
+      {isLongPressMode && (
+        <div className="mb-2 p-2 bg-green-100 border-2 border-green-500 rounded-lg text-center animate-pulse">
+          <p className="text-sm font-semibold text-green-900">
+            ✓ Selection Mode Active - Drag to select
+          </p>
+        </div>
+      )}
+
+      <div
+        ref={gridRef}
+        className="overflow-x-auto"
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+        onMouseLeave={handleMouseUp}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+      >
       <div className="min-w-max border border-gray-300">
         {/* Header with dates */}
         <div className="flex bg-gray-50 sticky top-0 z-10 border-b border-gray-300">
@@ -335,6 +432,8 @@ export default function TimeSlotGrid({
                   <motion.div
                     key={slot.id}
                     data-slot-id={slot.id}
+                    data-date-index={dateIndex}
+                    data-time-index={timeIndex}
                     className={`
                       w-16 h-8 flex-shrink-0 cursor-pointer
                       select-none transition-colors
@@ -349,7 +448,7 @@ export default function TimeSlotGrid({
                     style={{ touchAction: readOnly || isTouchDevice ? 'auto' : 'none' }}
                     onMouseDown={() => handleMouseDown(slot.id, dateIndex, timeIndex)}
                     onMouseEnter={() => handleMouseEnter(slot.id, dateIndex, timeIndex)}
-                    onTouchStart={(e) => handleTouchStart(e, slot.id)}
+                    onTouchStart={(e) => handleTouchStart(e, slot.id, dateIndex, timeIndex)}
                     onTouchEnd={handleTouchEnd}
                     whileHover={readOnly ? {} : { scale: 1.02 }}
                     whileTap={readOnly ? {} : { scale: 0.98 }}
@@ -361,14 +460,13 @@ export default function TimeSlotGrid({
         </div>
       </div>
 
-      {/* Instructions */}
-      {!readOnly && (
+      {/* Desktop instructions */}
+      {!readOnly && !isTouchDevice && (
         <div className="mt-4 text-sm text-gray-600 text-center">
-          {isTouchDevice
-            ? 'Tap to select time slots, swipe to scroll'
-            : 'Click or drag to select your available time slots'}
+          Click or drag to select your available time slots
         </div>
       )}
+      </div>
     </div>
   );
 }
