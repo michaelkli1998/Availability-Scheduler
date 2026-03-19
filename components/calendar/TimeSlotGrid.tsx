@@ -474,11 +474,16 @@ export default function TimeSlotGrid({
                       }
                       ${readOnly ? 'cursor-default' : ''}
                     `}
-                    style={{ touchAction: readOnly || isTouchDevice ? 'auto' : 'none' }}
+                    style={{
+                      touchAction: readOnly || isTouchDevice ? 'manipulation' : 'none',
+                      WebkitTouchCallout: 'none',
+                      WebkitUserSelect: 'none',
+                    }}
                     onMouseDown={() => handleMouseDown(slot.id, dateIndex, timeIndex)}
                     onMouseEnter={() => handleMouseEnter(slot.id, dateIndex, timeIndex)}
                     onTouchStart={(e) => handleTouchStart(e, slot.id, dateIndex, timeIndex)}
                     onTouchEnd={handleTouchEnd}
+                    onContextMenu={(e) => e.preventDefault()}
                     whileHover={readOnly ? {} : { scale: 1.02 }}
                     whileTap={readOnly ? {} : { scale: 0.98 }}
                   />
