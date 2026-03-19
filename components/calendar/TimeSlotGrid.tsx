@@ -64,6 +64,25 @@ export default function TimeSlotGrid({
     };
   }, []);
 
+  // Add non-passive touch event listeners to prevent scrolling during drag
+  useEffect(() => {
+    const gridElement = gridRef.current;
+    if (!gridElement) return;
+
+    const handleTouchMoveNonPassive = (e: TouchEvent) => {
+      if (isLongPressMode) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+    };
+
+    gridElement.addEventListener('touchmove', handleTouchMoveNonPassive, { passive: false });
+
+    return () => {
+      gridElement.removeEventListener('touchmove', handleTouchMoveNonPassive);
+    };
+  }, [isLongPressMode]);
+
   const toggleSlot = useCallback(
     (slotId: string) => {
       if (readOnly) return;
