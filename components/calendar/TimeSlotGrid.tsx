@@ -78,20 +78,12 @@ export default function TimeSlotGrid({
     // Add listener to grid container
     gridElement.addEventListener('touchmove', handleTouchMoveNonPassive, { passive: false });
 
-    // Also add to document body to prevent all scrolling in long press mode
-    document.body.addEventListener('touchmove', handleTouchMoveNonPassive, { passive: false });
-
-    // Prevent body overflow when in long press mode
-    if (isLongPressMode) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
-    }
+    // Also add to document to catch all touch events
+    document.addEventListener('touchmove', handleTouchMoveNonPassive, { passive: false });
 
     return () => {
       gridElement.removeEventListener('touchmove', handleTouchMoveNonPassive);
-      document.body.removeEventListener('touchmove', handleTouchMoveNonPassive);
-      document.body.style.overflow = '';
+      document.removeEventListener('touchmove', handleTouchMoveNonPassive);
     };
   }, [isLongPressMode]);
 
