@@ -22,7 +22,6 @@ export default function TimeSlotGrid({
   const [selectionMode, setSelectionMode] = useState<'add' | 'remove'>('add');
   const [isTouchDevice, setIsTouchDevice] = useState(false);
   const [isLongPressMode, setIsLongPressMode] = useState(false);
-  const [isWaitingForLongPress, setIsWaitingForLongPress] = useState(false);
   const gridRef = useRef<HTMLDivElement>(null);
   const scrollIntervalRef = useRef<number | null>(null);
   const touchStartPos = useRef<{ x: number; y: number } | null>(null);
@@ -30,6 +29,7 @@ export default function TimeSlotGrid({
   const dragStartCell = useRef<{ dateIndex: number; timeIndex: number } | null>(null);
   const initialSelectedSlots = useRef<string[]>([]);
   const longPressTimer = useRef<NodeJS.Timeout | null>(null);
+  const isLongPressModeRef = useRef(false);
 
   console.log('TimeSlotGrid received slots:', timeSlots.length);
 
@@ -71,8 +71,8 @@ export default function TimeSlotGrid({
     if (!gridElement) return;
 
     const handleTouchMoveNonPassive = (e: TouchEvent) => {
-      // Prevent scrolling during long press waiting period OR active drag mode
-      if (isWaitingForLongPress || isLongPressMode) {
+      // Use ref instead of state to avoid re-creating listeners
+      if (isLongPressModeRef.current) {
         e.preventDefault(); // Prevent scrolling but allow event to bubble
       }
     };
@@ -87,7 +87,7 @@ export default function TimeSlotGrid({
       gridElement.removeEventListener('touchmove', handleTouchMoveNonPassive);
       document.removeEventListener('touchmove', handleTouchMoveNonPassive);
     };
-  }, [isLongPressMode, isWaitingForLongPress]);
+  }, []); // Empty deps - only set up once
 
   const toggleSlot = useCallback(
     (slotId: string) => {
@@ -232,13 +232,10 @@ export default function TimeSlotGrid({
       // Prevent mouse events from firing after touch events
       e.preventDefault();
 
-      // Mark that we're waiting for long press
-      setIsWaitingForLongPress(true);
-
       // Start long press timer (500ms)
       longPressTimer.current = setTimeout(() => {
-        setIsWaitingForLongPress(false);
         setIsLongPressMode(true);
+        isLongPressModeRef.current = true;
         setIsSelecting(true);
         dragStartCell.current = { dateIndex, timeIndex };
         initialSelectedSlots.current = [...selectedSlots];
@@ -269,7 +266,6 @@ export default function TimeSlotGrid({
       if (longPressTimer.current) {
         clearTimeout(longPressTimer.current);
         longPressTimer.current = null;
-        setIsWaitingForLongPress(false);
       }
       return;
     }
@@ -332,12 +328,11 @@ export default function TimeSlotGrid({
   };
 
   const handleTouchEnd = (e: React.TouchEvent) => {
-    // Clear long press timer and waiting state
+    // Clear long press timer
     if (longPressTimer.current) {
       clearTimeout(longPressTimer.current);
       longPressTimer.current = null;
     }
-    setIsWaitingForLongPress(false);
 
     if (isTouchDevice && touchStartPos.current && touchedSlotId.current) {
       const touch = e.changedTouches[0];
@@ -357,6 +352,7 @@ export default function TimeSlotGrid({
 
     // Reset long press mode and drag state
     setIsLongPressMode(false);
+    isLongPressModeRef.current = false;
     setIsSelecting(false);
     dragStartCell.current = null;
     initialSelectedSlots.current = [];
