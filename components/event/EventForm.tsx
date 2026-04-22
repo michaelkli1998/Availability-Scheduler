@@ -46,9 +46,8 @@ export default function EventForm({ onSubmit, isSubmitting = false }: EventFormP
   const endDateValue = watch('endDate');
 
   const onSubmitForm = (data: FormValues) => {
-    // Parse dates in UTC to avoid timezone issues
-    const startDate = new Date(data.startDate + 'T00:00:00Z');
-    const endDate = new Date(data.endDate + 'T00:00:00Z');
+    const startDate = new Date(data.startDate + 'T00:00:00');
+    const endDate = new Date(data.endDate + 'T00:00:00');
 
     console.log('Form submission:', {
       startDate,
