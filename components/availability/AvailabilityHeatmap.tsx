@@ -52,7 +52,7 @@ export default function AvailabilityHeatmap({
   return (
     <div className="relative" onMouseLeave={handleMouseLeave}>
       <div className="overflow-x-auto">
-        <div className="min-w-max border border-gray-300">
+        <div className="w-max border border-gray-300">
           {/* Header with dates */}
           <div className="flex bg-gray-50 sticky top-0 z-10 border-b border-gray-300">
             <div className="w-28 flex-shrink-0 p-2 border-r border-gray-300">

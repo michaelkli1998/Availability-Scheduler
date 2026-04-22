@@ -417,7 +417,7 @@ export default function TimeSlotGrid({
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
       >
-      <div className="min-w-max border border-gray-300">
+      <div className="w-max border border-gray-300">
         {/* Header with dates */}
         <div className="flex bg-gray-50 sticky top-0 z-10 border-b border-gray-300">
           <div className="w-28 flex-shrink-0 p-2 border-r border-gray-300 sticky left-0 z-20 bg-gray-50 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.1)]">
